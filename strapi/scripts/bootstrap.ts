@@ -1,14 +1,14 @@
 #!/usr/bin/env ts-node -T
 import shelljs from 'shelljs'
 
-require('dotenv').config('../.env')
+require('dotenv').config({ path: '.env' })
 
-const email = 'test@test.com'
-const password = 'Test123123'
+const email = process.env.STRAPI_ADMIN_EMAIL || 'test@test.com'
+const password = process.env.STRAPI_ADMIN_PASSWORD || 'Test123123'
 
 async function main() {
   try {
-    const createAdminCmd = `npx strapi admin:create-user --firstname=Jane --lastname=Doe --email=${email} --password=${password}`
+    const createAdminCmd = `yarn strapi admin:create-user --firstname=Jane --lastname=Doe --email=${email} --password=${password}`
     console.log('\n', createAdminCmd)
     const { stdout, code } = shelljs.exec(createAdminCmd)
     if (code) {

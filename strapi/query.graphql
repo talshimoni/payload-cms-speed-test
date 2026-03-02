@@ -1,82 +1,46 @@
 query {
   documents {
-    data {
-      attributes {
+    title
+    relationship_as {
+      title
+      relationship_b {
         title
+      }
+    }
+    blocks {
+      ... on ComponentDocumentRelationToOne {
+        text
+        relationship_a {
+          title
+          relationship_b {
+            title
+          }
+        }
+      }
+      ... on ComponentDocumentHasManyRelations {
+        text
         relationship_as {
-          data {
-            attributes {
-              title
-              relationship_b {
-                data {
-                  attributes {
-                    title
-                  }
-                }
-              }
-            }
+          title
+          relationship_b {
+            title
           }
         }
-        blocks {
-          ...on ComponentDocumentRelationToOne {
-            text
-            relationship_a {
-              data {
-                attributes {
-                  title
-                  relationship_b {
-                    data {
-                      attributes {
-                        title
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-          ...on ComponentDocumentHasManyRelations {
-            text
-            relationship_as {
-              data {
-                attributes {
-                  title
-                  relationship_b {
-                    data {
-                      attributes {
-                        title
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-        Group {
-          text
-          NestedGroup {
-            text
-          }
-        }
-        array {
-          text
-          NestedArray {
-            text
-            relationship_a {
-              data {
-                attributes {
-                  title
-                  relationship_b {
-                    data {
-                      attributes {
-                        title
-                      }
-                    }
-                  }
-                }
-              }
-            }
+      }
+    }
+    Group {
+      text
+      NestedGroup {
+        text
+      }
+    }
+    array {
+      text
+      NestedArray {
+        text
+        relationship_a {
+          title
+          relationship_b {
+            title
           }
         }
       }

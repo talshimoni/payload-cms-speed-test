@@ -3,16 +3,43 @@ import { v4 as uuid } from 'uuid';
 import { mapAsync } from './utilities/mapAsync';
 
 export const seed = async (payload: Payload): Promise<void> => {
+  const seedEmail = 'dev@payloadcms.com';
+  const seedPassword = 'test';
 
-  // Create initial user
-
-  await payload.create({
+  const existingUser = await payload.find({
     collection: 'users',
-    data: {
-      email: 'dev@payloadcms.com',
-      password: 'test',
-    }
-  })
+    depth: 0,
+    limit: 1,
+    where: {
+      email: {
+        equals: seedEmail,
+      },
+    },
+  });
+
+  if (existingUser.docs.length === 0) {
+    await payload.create({
+      collection: 'users',
+      data: {
+        email: seedEmail,
+        password: seedPassword,
+      }
+    });
+    payload.logger.info(`Seed user created (${seedEmail})`);
+  } else {
+    payload.logger.info(`Seed user already exists (${seedEmail}), skipping user creation`);
+  }
+
+  const existingBenchmarkDoc = await payload.find({
+    collection: 'documents',
+    depth: 0,
+    limit: 1,
+  });
+
+  if (existingBenchmarkDoc.docs.length > 0) {
+    payload.logger.info('Benchmark data already exists, skipping seed');
+    return;
+  }
 
   const relationshipAIDs = [];
   const relationshipBIDs = [];

@@ -1,52 +1,138 @@
-# Payload vs. Directus vs. Strapi Speed Test
+# Payload vs Directus vs Strapi Speed Test
 
-With this performance test, we wanted to see how a real-world, complex document query might fare while retrieved from the three different CMS' GraphQL endpoints. Let's consider a complex "mega menu" document, where there may be 30-50 "links" to other pages / posts / etc. and lots of media relations like icons, images, etc. that need to be rendered in a given mega menu. Just with that one mega menu document, we might have to retrieve a ton of "related" documents, with lots of JSON coming back from the response. 
+This repo benchmarks a heavy GraphQL document query across three CMSs:
 
-In our past experience, this can quickly become problematic (especially if you are server-side rendering) because that mega menu "document" is used by and needs to be retrieved for **every single server-rendered view** of a given app or website. That means that unless your CMS is heavily optimized, you're going to need to shell out some cash to make sure your server can handle this type of request. To make matters worse, modern frontend frameworks like Gatsby or Next often pre-render views, which means that during the build process, your server could get hammered with requests to your API.
+1. Payload
+2. Directus
+3. Strapi
 
-To reflect a moderately complex real-world query, we designed a document structure that features 60+ relationships as well as complex data structures like groups, arrays, nested arrays, and blocks. The document itself is seeded predictably and exactly in the same manner through all three content management systems, and the GraphQL queries that are run are exactly the same outside of specific CMS syntax differences.
+The query is intentionally deep and relation-heavy (groups, arrays, nested arrays, blocks, and multiple relation hops) to simulate real-world menu/layout fetching patterns.
 
-## Results
+## Requirements
 
-Results are analyzed across 100 sequential queries. Unit is milliseconds.
+1. Node `24.14.0` for Payload and Strapi (repo root contains `.nvmrc` / `.node-version`)
+2. Node `22.x` for Directus (`isolated-vm@5.0.3` is not compatible with Node `24.x`)
+3. Yarn classic (`1.x`)
+4. Docker (for MongoDB/Postgres quick start)
 
-| Platform | Average | Max | Min | Total Test Time |
-| -------- | ------- | --- | --- | --------------- |
-| Payload  | 15      | 43  | 8   | 1513            |
-| Directus | 45      | 139 | 24  | 4459            |
-| Strapi   | 102     | 353 | 77  | 10172           |
+## Install
 
-## Setup and Run Tests
+From repo root:
 
-Each platform has individual setup and execution steps documented below. Results are output as `<platform>-results.json` in the root project directory.
+```bash
+yarn install
+yarn --cwd ./payload install
+yarn --cwd ./directus install
+yarn --cwd ./strapi install
+```
 
-To run performance tests for a specific CMS, run `yarn` in the root folder, and then follow the steps below for whichever CMS you're looking to test.
+## Start Databases with Docker
 
-### Payload
+Create and start MongoDB + Postgres:
 
-1. `cd ./payload`
-1. Copy .env.example to .env and update values if necessary
-1. `yarn install`
-1. On top-level, run `yarn payload:run`
-1. In another terminal window, run `yarn payload:test`
+```bash
+docker run --name speedtest-mongo -p 27017:27017 -d mongo:7
+docker run --name speedtest-postgres \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=postgres \
+  -p 5432:5432 \
+  -d postgres:16
+```
+
+Create required Postgres DBs:
+
+```bash
+docker exec -it speedtest-postgres psql -U postgres -c "CREATE DATABASE strapi;"
+docker exec -it speedtest-postgres psql -U postgres -c "CREATE DATABASE directus;"
+docker exec -it speedtest-postgres psql -U postgres -c "CREATE DATABASE payload_speed_test;"
+```
+
+## Setup Per CMS
+
+### Payload (Mongo)
+
+1. Copy [payload/.env.example](/Users/tal/Desktop/speed-test/payload/.env.example) to `payload/.env`
+2. Ensure:
+   `PAYLOAD_DB=mongo`
+   `MONGODB_URI=mongodb://localhost:27017/payload-speed-test`
+3. Start server: `yarn payload:run` (or `yarn payload:run:mongo`)
+4. Run benchmark: `yarn payload:test`
+5. Default GraphQL endpoint: `http://localhost:3000/api/graphql`
+
+### Payload (Postgres)
+
+1. Copy [payload/.env.example](/Users/tal/Desktop/speed-test/payload/.env.example) to `payload/.env`
+2. Ensure:
+   `PAYLOAD_DB=postgres`
+   `POSTGRES_URL=postgres://postgres:postgres@localhost:5432/payload_speed_test`
+3. Start server: `yarn payload:run` (or `yarn payload:run:postgres`)
+4. Run benchmark: `yarn payload:test`
+5. Default GraphQL endpoint: `http://localhost:3000/api/graphql`
 
 ### Directus
 
-1. Create DB named `directus` in Postgres
-1. Restore `dump.sql` against `directus` DB
-1. `cd ./directus`
-1. `yarn install`
-1. Copy .env.example to .env and update values if necessary
-1. On top-level, run `yarn directus:run`
-1. In another terminal window, run `yarn seed`
-1. Run `yarn directus:test`
+1. Switch to Node `22.x` and install deps for Directus:
+   `fnm install 22 && fnm use 22 && yarn --cwd ./directus install`
+2. Copy `directus/.env.example` to `directus/.env`
+3. Restore dump (from repo root, tar-format dump):
+   `pg_restore -h localhost -U postgres -d directus --clean --if-exists --no-owner --no-privileges ./directus/dump.sql`
+4. Run migrations:
+   `yarn --cwd ./directus exec directus database migrate:latest`
+5. Start server: `yarn directus:run`
+6. Seed (if needed): `yarn --cwd ./directus seed`
+7. Run benchmark: `yarn directus:test`
 
 ### Strapi
 
-1. Create DB named `strapi` in Postgres
-1. `cd ./strapi`
-1. Copy .env.example to .env and update values if necessary
-1. `yarn install`
-1. On top-level, run `yarn strapi:run`
-1. In another terminal window, run `yarn strapi:bootstrap`
-1. `yarn strapi:test`
+1. Copy `strapi/.env.example` to `strapi/.env`
+2. Start server: `yarn strapi:run`
+3. Bootstrap + seed: `yarn strapi:bootstrap`
+4. Run benchmark: `yarn strapi:test`
+
+## Test CLI Options
+
+All benchmarks are run from root via `test.ts`.
+
+Examples:
+
+```bash
+yarn strapi:test
+yarn strapi:test -- -v
+yarn strapi:test -- --requests 50 -v
+
+yarn payload:test -- -v
+yarn directus:test -- --requests 200
+```
+
+Options:
+
+1. `-v`, `--verbose`: print per-request status code and response bytes
+2. `-n <number>`, `--requests <number>`, `--requests=<number>`: number of sequential requests (default `100`)
+3. Optional base-url envs:
+   `PAYLOAD_TEST_BASE_URL`, `DIRECTUS_TEST_BASE_URL`, `STRAPI_TEST_BASE_URL`
+4. Optional explicit Payload GraphQL endpoint:
+   `PAYLOAD_TEST_GRAPHQL_ENDPOINT`
+
+Results are written to root as:
+
+1. `results-payload.json`
+2. `results-directus.json`
+3. `results-strapi.json`
+
+## Latest Local Results (March 2, 2026)
+
+Unit: milliseconds, 100 sequential requests.
+
+| Platform | Average | Max | Min | Total |
+| -------- | ------- | --- | --- | ----- |
+| Payload (Mongo) | 10.96 | 19 | 8 | 1103 |
+| Payload (Postgres) | 13.62 | 29 | 9 | 1367 |
+| Directus (Postgres) | 11.06 | 30 | 8 | 1107 |
+| Strapi (Postgres) | 57.27 | 109 | 49 | 5731 |
+
+## Notes
+
+1. Strapi benchmark auth now uses an admin-created full-access API token for stable GraphQL permissions.
+2. Strapi bootstrap/seed scripts are resilient and can auto-handle server startup cases.
+3. For strict apples-to-apples comparisons, run all three stacks on similar hardware/DB placement and warm cache strategy.

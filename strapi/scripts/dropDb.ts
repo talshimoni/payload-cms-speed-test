@@ -1,5 +1,4 @@
 #!/usr/bin/env ts-node -T
-import 'isomorphic-fetch'
 import shelljs from 'shelljs'
 import { Pool, Client } from 'pg'
 

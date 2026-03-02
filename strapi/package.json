@@ -3,43 +3,42 @@
   "private": true,
   "version": "0.1.0",
   "description": "A Strapi application",
+  "engines": {
+    "node": ">=24.14.0 <25",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "develop": "strapi develop",
     "start": "strapi start",
     "build": "strapi build",
     "strapi": "strapi",
-    "cs": "config-sync",
-    "bootstrap": "ts-node -T scripts/bootstrap.ts && yarn cs import",
+    "bootstrap": "ts-node -T scripts/bootstrap.ts",
     "seed": "ts-node -T scripts/seed.ts"
   },
   "devDependencies": {
-    "@strapi/utils": "^4.3.9",
-    "@types/pg": "^8.6.5",
-    "@types/shelljs": "^0.8.11",
-    "isomorphic-fetch": "^3.0.0",
-    "shelljs": "^0.8.5",
-    "ts-node": "^10.9.1",
-    "uuid": "^9.0.0"
+    "@strapi/utils": "5.37.1",
+    "@types/pg": "latest",
+    "@types/shelljs": "latest",
+    "shelljs": "latest",
+    "ts-node": "latest",
+    "uuid": "latest"
   },
   "dependencies": {
-    "@strapi/plugin-graphql": "^4.3.9",
-    "@strapi/plugin-i18n": "4.3.9",
-    "@strapi/plugin-users-permissions": "4.3.9",
-    "@strapi/strapi": "4.3.9",
-    "better-sqlite3": "7.4.6",
-    "dotenv": "^16.0.2",
-    "pg": "^8.8.0",
-    "strapi-plugin-config-sync": "^1.0.4"
+    "@strapi/plugin-graphql": "5.37.1",
+    "@strapi/plugin-users-permissions": "5.37.1",
+    "@strapi/strapi": "5.37.1",
+    "dotenv": "latest",
+    "pg": "latest",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-router-dom": "6.30.3",
+    "styled-components": "6.1.8"
   },
   "author": {
     "name": "A Strapi developer"
   },
   "strapi": {
     "uuid": "abac480a-0ce9-424d-8443-4d9929030f5f"
-  },
-  "engines": {
-    "node": ">=14.19.1 <=18.x.x",
-    "npm": ">=6.0.0"
   },
   "license": "MIT"
 }
